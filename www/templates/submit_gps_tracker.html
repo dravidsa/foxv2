@@ -1,0 +1,644 @@
+<html>
+<head>
+<title>GPS Tracker</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+		
+	
+  <script src= "http://ajax.googleapis.com/ajax/libs/angularjs/1.3.14/angular.min.js"></script>
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="js/ngStorage.min.js"></script>
+
+  <script src="js/spin.js"></script>
+  <script src="js/spin.min.js"></script>
+   
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<link rel="stylesheet"  href="http://cdn.datatables.net/1.10.2/css/jquery.dataTables.min.css"></style>
+<script type="text/javascript" src="http://cdn.datatables.net/1.10.2/js/jquery.dataTables.min.js"></script>
+
+
+<script type="text/javascript" charset="utf-8">
+			$(document).ready(function() 
+			{
+				loadXMLDoc() ; 
+			} );
+		</script>
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?sensor=false"></script>
+
+<script>
+
+var hasData;
+
+
+var lineCoordinates = new Array() ; 
+
+var map;
+var markers = [];
+
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+function loadXMLDoc()
+{
+
+
+var vehicleid= getParameterByName('vehicleID');
+var from_time = getParameterByName('fromthistime');
+var to_time = getParameterByName('tothattime');
+var status = getParameterByName('timestatus');
+var datepicker = getParameterByName('datepickerFrom');
+
+var from_dt = datepicker + ' ' + from_time ;  
+var to_dt = datepicker;
+
+var opts = {
+  lines: 13 // The number of lines to draw
+, length: 6// The length of each line
+, width: 4 // The line thickness
+, radius: 6 // The radius of the inner circle
+, scale: 1 // Scales overall size of the spinner
+, corners: 1 // Corner roundness (0..1)
+, color: '#000' // #rgb or #rrggbb or array of colors
+, opacity: 0.25 // Opacity of the lines
+, rotate: 0 // The rotation offset
+, direction: 1 // 1: clockwise, -1: counterclockwise
+, speed: 1 // Rounds per second
+, trail: 60 // Afterglow percentage
+, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+, zIndex: 2e9 // The z-index (defaults to 2000000000)
+, className: 'spinner' // The CSS class to assign to the spinner
+, shadow: false // Whether to render a shadow
+, hwaccel: false // Whether to use hardware acceleration
+, position: 'absolute' // Element positioning
+}
+var target = document.getElementById('divSpinner')
+var spinner = new Spinner(opts).spin(target);
+
+var urw= 'http://foxsolutions.in/fox/api/GPSMaps/';
+
+$.ajax({
+         type: "POST",
+         url: urw,
+		  data: {
+					vehicleid: vehicleid,
+					from_dt : from_dt ,
+					to_dt : to_dt ,
+					status : status,
+					to_time : to_time
+               }, 
+crossDomain: true,
+cache: false,
+beforeSend: function(){},
+success: function(data)
+{
+    if(data)
+	{
+           drawMap(data);
+	}
+}
+
+});
+$(".spinner").remove();
+}
+
+
+
+function loadLiveData()
+{
+
+if(hasData == 0)
+{
+   loadXMLDoc();
+}
+else
+{
+
+var vehicleid= getParameterByName('vehicleID');
+var vehicle_position_id =localStorage.lastId ;
+
+
+
+var urw= 'http://foxsolutions.in/fox/api/GPSMapsforLive/';
+
+$.ajax({
+         type: "POST",
+         url: urw,
+		  data: {
+                    vehicleid: vehicleid,
+					vehicle_position_id : vehicle_position_id 
+               }, 
+crossDomain: true,
+cache: false,
+beforeSend: function(){},
+success: function(data)
+{
+    if(data)
+	{
+           drawLiveMap(data);
+	}
+}
+
+});
+}
+}
+
+function drawLiveMap(latlongArr)
+{
+
+var opts = {
+  lines: 13 // The number of lines to draw
+, length: 6// The length of each line
+, width: 4 // The line thickness
+, radius: 6 // The radius of the inner circle
+, scale: 1 // Scales overall size of the spinner
+, corners: 1 // Corner roundness (0..1)
+, color: '#000' // #rgb or #rrggbb or array of colors
+, opacity: 0.25 // Opacity of the lines
+, rotate: 0 // The rotation offset
+, direction: 1 // 1: clockwise, -1: counterclockwise
+, speed: 1 // Rounds per second
+, trail: 60 // Afterglow percentage
+, fps: 20 // Frames per second when using setTimeout() as a fallback for CSS
+, zIndex: 2e9 // The z-index (defaults to 2000000000)
+, className: 'spinner' // The CSS class to assign to the spinner
+, shadow: false // Whether to render a shadow
+, hwaccel: false // Whether to use hardware acceleration
+, position: 'absolute' // Element positioning
+}
+var target = document.getElementById('divSpinner')
+var spinner = new Spinner(opts).spin(target);
+
+var prev_timetaken = localStorage.getItem("timetaken");
+var prev_distance = localStorage.getItem("distance");
+var prev_stoppedTime = localStorage.getItem("stoppedTime");
+
+
+var obj = JSON.parse(latlongArr) ; 
+var latlonglen = obj.length ; 
+
+var latitude ; 
+var longitude ; 
+var total_distance = 0    ; 
+var start_datetime   ; 
+
+var end_datetime  ; 
+var total_time = 0 ; 
+var average_speed =  0 ; 
+
+var stopped_time = 0 ; 
+var diff_stopped = 0 ; 
+var dist;
+
+
+
+if(latlonglen > 1 )
+{
+	var myOptions ;		
+
+	var j =markers.length-1;
+	if( j > 1 )
+	{
+		markers[j].setMap(null);	
+	}
+	for (i = 0; i < latlonglen;  i++) 
+	{
+		latitude = obj[i].latitude ; 
+		longitude = obj[i].longitude ; 
+		destinationtime = obj[i].date_time ; 
+		
+		if ( i == 0 )
+		{
+			prev_latitude = latitude  ;
+			prev_longitude  = longitude  ;
+			prev_time =  destinationtime ;
+			start_datetime = destinationtime ; 
+		}
+		else 
+		{ 
+			dist= distance(prev_latitude,prev_longitude,latitude,longitude,"K" )  ;
+			var image ; 
+
+			if ( longitude < prev_longitude ) 
+			{ 
+				image = "images/bus_left.jpg"
+			}
+			else 
+			{ 
+				image ="images/bus_right.jpg" ; 
+			}
+			if ( dist =='NAN' ) 
+			{ 
+				dist= 0 ;
+			}
+			total_distance =total_distance + dist ;
+		
+		
+			if (( latitude == prev_latitude ) && ( longitude == prev_longitude ))
+			{
+
+				diff_stopped = Date.parse(destinationtime) - Date.parse(prev_time);
+				stopped_time += diff_stopped ;
+				console.log( "Live stopped time is " + diff_stopped) ; 
+
+			}
+			prev_latitude = latitude  ;
+			prev_longitude  = longitude  ;
+			prev_time=destinationtime ;
+		}
+		console.log("total distance " + total_distance);
+	
+	lineCoordinates.push( new google.maps.LatLng(obj[i].latitude,obj[i].longitude )) ;
+
+	if  ( i == latlonglen -1 )
+	{ 
+    marker = new google.maps.Marker({
+    position: new google.maps.LatLng( obj[i].latitude  , obj[i].longitude ),
+        map: map,
+		icon : image 
+      });
+            
+	}
+	else{
+		marker = new google.maps.Marker({
+    position: new google.maps.LatLng( obj[i].latitude  , obj[i].longitude ),
+        map: map
+		 
+      });
+	  
+         }
+   markers.push(marker);
+
+
+if ( i == latlonglen-1) {
+        localStorage.lastId = obj[i].vehicle_position_id;
+		end_datetime=obj[i].date_time ; 
+	}
+}
+	var flightPath=new google.maps.Polyline({
+path:lineCoordinates,
+strokeColor:"#0000FF",
+strokeOpacity:0.8,
+strokeWeight:2
+});
+flightPath.setMap(map);
+
+var myLatlng = new google.maps.LatLng(obj[i-1].latitude,obj[i-1].longitude);
+map.setCenter(myLatlng);
+total_time = (Date.parse(end_datetime) - Date.parse(start_datetime)) /(60*1000) ; 
+
+var currentTimeTaken = roundNumber(total_time,1) ;
+var currentStoppedTime  = roundNumber(stopped_time/60000,2)
+var currentDistancetaken = roundNumber(total_distance,2);
+
+
+var timetaken = Number(prev_timetaken) + Number(currentTimeTaken);
+var stoppedTime = Number(prev_stoppedTime) + Number(currentStoppedTime); 
+var distancetaken = Number(prev_distance) + Number(currentDistancetaken); 
+
+if ( total_time == 0 ) 
+	average_speed = 0  ; 
+else 
+average_speed = distance*6*10/(timetaken) ; 
+
+
+document.getElementById("timetaken").innerHTML = timetaken + "Mins" ;
+document.getElementById("distance").innerHTML = distancetaken + "Km";
+document.getElementById("stoppedTime").innerHTML = stoppedTime + "Mins";
+document.getElementById("speed").innerHTML = roundNumber(average_speed,2) + "Km/Hr"  ;
+
+
+localStorage.setItem("timetaken", timetaken);
+localStorage.setItem("distance", distancetaken);
+localStorage.setItem("stoppedTime", stoppedTime);
+}
+$(".spinner").remove();
+}
+
+var status = getParameterByName('timestatus');
+if (status == 'live')
+{
+setInterval(function(){  loadLiveData(); }, 20000);
+}
+
+
+function distance(lat1, lon1, lat2, lon2, unit) {
+    var radlat1 = Math.PI * lat1/180
+    var radlat2 = Math.PI * lat2/180
+    var radlon1 = Math.PI * lon1/180
+    var radlon2 = Math.PI * lon2/180
+    var theta = lon1-lon2
+    var radtheta = Math.PI * theta/180
+    var dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+    dist = Math.acos(dist)
+    dist = dist * 180/Math.PI
+    dist = dist * 60 * 1.1515
+    if (unit=="K") { dist = dist * 1.609344 }
+    if (unit=="N") { dist = dist * 0.8684 }
+    return dist
+}
+
+function roundNumber(number,decimal_points) {
+	if(!decimal_points) return Math.round(number);
+	if(number == 0) {
+		var decimals = "";
+		for(var i=0;i<decimal_points;i++) decimals += "0";
+		return "0."+decimals;
+	}
+
+	var exponent = Math.pow(10,decimal_points);
+	var num = Math.round((number * exponent)).toString();
+	return num.slice(0,-1*decimal_points) + "." + num.slice(-1*decimal_points)
+}
+
+function drawMap(latlongArr) 
+{
+ 
+ //If no data set bydefault to pune maps
+if(latlongArr=="0")
+{
+
+    var mapCanvas = document.getElementById('map_canvas');
+    var mapOptions = {
+      center: new google.maps.LatLng(18.5204393, 73.8567347),
+      zoom: 14,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    }
+    map = new google.maps.Map(mapCanvas, mapOptions);
+	hasData = 0;
+}
+else
+{
+hasData = 1;
+var obj = JSON.parse(latlongArr) ; 
+var latlonglen = obj.length ; 
+
+localStorage.lastId = obj[latlonglen-1].vehicle_position_id;
+
+var myOptions ;
+				
+        if(localStorage.mapLat!=null && localStorage.mapLng!=null && localStorage.mapZoom!=null)
+         {
+           
+           var zoomLevel =  parseInt(localStorage.mapZoom);
+          
+            myOptions = {
+                zoom : zoomLevel ,
+                 center: new google.maps.LatLng(obj[latlonglen-1].latitude, obj[latlonglen-1].longitude),
+               mapTypeId: google.maps.MapTypeId.ROADMAP
+             };
+
+           }
+          else
+          {
+           
+             myOptions = {
+                zoom : 20,
+                 center: new google.maps.LatLng(obj[latlonglen-1].latitude, obj[latlonglen-1].longitude),
+               mapTypeId: google.maps.MapTypeId.ROADMAP
+             };
+}
+
+map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+
+var latitude ; 
+var longitude ; 
+var total_distance = 0    ; 
+var start_datetime   ; 
+
+var end_datetime  ; 
+var total_time = 0 ; 
+var average_speed =  0 ; 
+
+var stopped_time = 0 ; 
+var diff_stopped = 0 ; 
+ 
+
+
+
+
+var infowindow = new google.maps.InfoWindow(), marker, i;
+
+for (i = 0; i < latlonglen;  i++) {  
+    latitude = obj[i].latitude ; 
+    longitude = obj[i].longitude ; 
+    destinationtime = obj[i].date_time ; 
+
+
+
+if ( i ==0 )
+{
+prev_latitude = latitude  ;
+prev_longitude  = longitude  ;
+prev_time=destinationtime ;
+
+start_datetime = destinationtime ; 
+
+}
+else { dist= distance(prev_latitude,prev_longitude,latitude,longitude,"K" )  ;
+
+
+
+
+var image ; 
+
+if ( longitude < prev_longitude ) { image = "images/bus_left.jpg"}
+else image ="images/bus_right.jpg" ; 
+
+if ( dist =='NAN' ) { dist= 0 ;}
+
+total_distance =total_distance + dist ;
+if (( latitude == prev_latitude ) && ( longitude == prev_longitude ))
+{
+
+ 
+diff_stopped = Date.parse(destinationtime) - Date.parse(prev_time);
+stopped_time += diff_stopped ;
+console.log( "stopped time is " + diff_stopped) ; 
+
+}
+
+prev_latitude = latitude  ;
+prev_longitude  = longitude  ;
+prev_time=destinationtime ;
+
+
+
+}
+
+    lineCoordinates.push( new google.maps.LatLng(obj[i].latitude,obj[i].longitude )) ;
+	if  ( i == latlonglen -1 )
+	{ 
+    marker = new google.maps.Marker({
+    position: new google.maps.LatLng( obj[i].latitude  , obj[i].longitude ),
+        map: map,
+		icon : image 
+      });
+            
+	}
+	else{
+		marker = new google.maps.Marker({
+    position: new google.maps.LatLng( obj[i].latitude  , obj[i].longitude ),
+        map: map
+		 
+      });
+         
+		
+	}
+      
+	if ( i == latlonglen-1) {
+		end_datetime=obj[i].date_time ; 
+	}
+	markers.push(marker);	
+}
+      
+      google.maps.event.addListener(marker, 'click', (function(marker, i) {
+        return function() {
+			//console.log("in listner");
+            infowindow.setContent('Current location is: '+ latitude +', '+longitude);
+          infowindow.open(map, marker);
+        }
+      })(marker, i));
+	  
+	  google.maps.event.addListener(map,"zoom_changed", function() {
+            //Set local storage variables.
+            mapCentre = map.getCenter();
+            
+            localStorage.mapLat = mapCentre.lat();
+            localStorage.mapLng = mapCentre.lng();
+            localStorage.mapZoom = map.getZoom();     
+			//console.log( "sving zoom level "+ map.getZoom()); 
+			
+        });
+
+
+var i =markers.length-1;
+  
+
+total_time = (Date.parse(end_datetime) - Date.parse(start_datetime)) /(60*1000) ; 
+
+if ( total_time == 0 ) 
+	average_speed = 0  ; 
+else 
+average_speed = total_distance*6*10/(total_time) ; 
+
+document.getElementById("timetaken").innerHTML = roundNumber(total_time,1) + "Mins" ;
+document.getElementById("distance").innerHTML = roundNumber(total_distance,2) + "Km";
+document.getElementById("stoppedTime").innerHTML = roundNumber(stopped_time/60000,2) + "Mins";
+document.getElementById("speed").innerHTML = roundNumber(average_speed,2) + "Km/Hr"  ;
+
+
+localStorage.setItem("timetaken", roundNumber(total_time,1));
+localStorage.setItem("distance", document.getElementById("distance").innerHTML);
+localStorage.setItem("stoppedTime", roundNumber(stopped_time/60000,2));
+
+
+var flightPath=new google.maps.Polyline({
+path:lineCoordinates,
+strokeColor:"#0000FF",
+strokeOpacity:0.8,
+strokeWeight:2
+});
+flightPath.setMap(map);
+
+}
+
+}
+
+        </script>
+</head>
+
+
+
+
+<style>
+ .Row
+{
+    display: table;
+    
+    table-layout: fixed; /*Optional*/
+    border-spacing: 10px; /*Optional*/
+}
+.Column
+{
+    display: table-cell;
+   
+}
+
+</style>
+
+
+</head>
+<body>
+
+<div>
+<div class="panel panel-primary">
+      <div class="panel-heading">GPS TRACKER</div>
+      <div class="panel-body">
+	  <div id="map_canvas" style="width:100%;height:700px;border:solid black 1px;margin-left:1px;margin-top:1px;margin-bottom:1px;"></div>
+	  </div>
+</div>
+
+<div class="panel panel-primary">
+      <div class="panel-heading">GPS Distance Travelled, Time and Speed</div>
+      <div class="panel-body">
+	   <table id="myTable" class="display table" style="width:100%;border: 1px solid black; border-collapse: collapse;">
+  <tr>
+    <td style="border: 1px solid black; border-collapse: collapse;">Time</td>
+    <td style="border: 1px solid black; border-collapse: collapse;"><div id="timetaken"></div></td> 
+    
+  </tr>
+  <tr>
+    <td style="border: 1px solid black; border-collapse: collapse;">Distance</td>
+    <td style="border: 1px solid black; border-collapse: collapse;"><div id="distance"></div></td> 
+    
+  </tr>
+  <tr>
+    <td style="border: 1px solid black; border-collapse: collapse;">Total Stopped Time</td>
+
+    <td style="border: 1px solid black; border-collapse: collapse;"><div id="stoppedTime"></div></td> 
+    
+  </tr>
+<tr>
+    <td style="border: 1px solid black; border-collapse: collapse;">Speed</td>
+    <td style="border: 1px solid black; border-collapse: collapse;"><div id="speed"></div></td> 
+    
+  </tr>
+</table>
+	  </div>
+</div>
+</div>
+ <div  id="divSpinner" name="divSpinner"> 
+    
+    
+</div>
+</body>
+</html>
+
+<script>
+
+function redirectHome()
+{
+      window.location = 'feed_gps_tracker.html';
+}
+
+//check data available or not
+
+</script>
+
+<style>
+table, th, td 
+{
+    
+}
+th, td {
+    padding: 5px;
+}
+</style>

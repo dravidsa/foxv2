@@ -1,0 +1,142 @@
+
+<style>
+#dvMap {
+  width: 100%;
+  height: 100%;
+}
+
+.scroll {
+  height: 100%;
+}
+</style>
+
+
+
+
+
+<ion-view view-title="Dashboard">
+  <ion-content class="padding">
+    <h2>GPS and Camera Feed </h2>
+	
+<label class = "item item-input item-select">
+   <div class = "input-label">
+      Select Vehicle
+   </div>
+	
+   <select ng-model="vehicleId" ng-change="showSelectValue(vehicleId)">
+      <option selected>Veh001</option>
+      <option>Veh002</option>
+      <option>Veh003</option>
+   </select>
+</label>
+
+   
+   <br/>
+	<br/>
+   
+   <div class="button-bar">
+  <a class="button button-assertive  icon icon-right ion-play " ng-click=setMode("live") >Live</a>
+  <a class="button button-royal icon icon-right ion-pause" ng-click=setMode("specific") >Specific</a>
+  </div> 
+  
+<center>
+<div id="timerange" ng-model="mode" ng-disabled="specific">
+
+ <div class="item item-icon-left" ion-datetime-picker date ng-model="dateValue">
+                <i class="icon ion-ios-calendar positive"></i>
+                Click me to open the date picker:
+                <strong>{{dateValue| date: "yyyy-MM-dd"}}</strong>
+            </div>
+			
+			<div class="item item-icon-left" ion-datetime-picker time ng-model="timeValue">
+                <i class="icon ion-ios-clock positive"></i>
+                Select From Time :
+                <strong>{{timeValue| date: "H:mm"}}</strong>
+            </div>
+			
+			<div class="item item-icon-left" ion-datetime-picker time ng-model="timeValue">
+                <i class="icon ion-ios-clock positive"></i>
+                Select To Time :
+                <strong>{{timeValue| date: "H:mm"}}</strong>
+            </div>
+			
+
+
+
+   <div class="row">
+          <div class="col"><button ng-click="showDate()"  class="button button-Large icon-left icon ion-calendar">For  Date   </button>
+		  </div> 
+          <div class="col">
+		  <label class="item item-input">
+    <input type="text" ng-model="forDate" disabled >
+  </label>
+  		  </div>
+	</div>
+	
+	<div class="row">
+          <div class="col"><button ng-click="showFromTime()" class="button button-Large icon-left icon ion-clock">From time </button>
+		  </div>
+		  <div class="col">
+		  <label class="item item-input">
+    <input type="text" ng-model= "fromTime" disabled }}>
+  </label>
+		  </div>
+         
+        </div>
+<div class="row">
+          <div class="col"><button ng-click="showToTime()"class="button button-Large icon-left icon ion-clock">To    Time   </button>
+		  </div>
+		  <div class="col">
+		  <label class="item item-input">
+    <input type="text" ng-model="toTime" disabled >
+  </label>
+		  </div>
+         
+        </div>
+		
+		<button class="button button-energized" ng-click=getData() >
+  Get Data
+</button>
+</div>
+{{ errorMessage }}
+</center>
+
+</div>
+
+  
+</div>
+  
+<br/>
+{{ debugMessage}}
+<br/>
+{{ GPSMessage}}  
+		 <center>
+<div id="dvMap" style="width: 500px; height:300px" class="row row-center">
+</center>
+
+</div>  
+
+<br/>
+{{ ImageMessage}}        
+<center>
+ <div id="imageDiv" class="row row-center">
+      <div class="col col-center">
+
+        <ion-slide-box>
+          <ion-slide ng-repeat="image in photos">
+
+            <center> <img ng-src="{{image.src}}" class="center"  style="width:500px;height:300px;margin:auto;display:block"  > </center>
+          </ion-slide>
+        </ion-slide-box>
+      </div>
+      </div>
+</center>
+
+	  
+	
+
+	  
+  
+
+  </ion-content>
+</ion-view>
