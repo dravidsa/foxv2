@@ -673,12 +673,14 @@ div.style.visibility = 'hidden';
                 }
                 else {
                     var _alert = { type: "danger", message: "The id  or password you entered is incorrect. " }
+					$ionicLoading.hide();
                     $scope.loginAlerts.push(_alert);
                     $scope.$parent.hide();
                 }
 
             }, function (error, status) {
                 console.log(error);
+				$ionicLoading.hide();
                 $rootScope.userModel.isLogIn = false;
                 $scope.userModel.isLogIn = false ;
                 $scope.$parent.hide();
