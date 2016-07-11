@@ -19,25 +19,9 @@
 
 </style>
 
-<script>
-var lastScrollTop = 0;
-$(window).scroll(function(e) {
-console.log( "here in scroll") ; 
-    var body = $("body")[0],
-        scrollTop = body.scrollTop;
 
-    if (scrollTop > lastScrollTop) {
-        console.log("scroll down") ; 
-            // do something
-        }
-    }
-     lastScrollTop = scrollTop;
-});
-</script>
 
 <body>
-
-
 
 
 <ion-view view-title="Dashboard">
@@ -49,8 +33,11 @@ console.log( "here in scroll") ;
       Select Vehicle
    </div>
 	
-   <select ng-model="vehicleId" ng-change="showSelectValue(vehicleId)"><option  ng-repeat="vehicle in vehicleArr" value = {{vehicle}} >{{vehicle}}</option>
-     </select>
+   <select ng-model="vehicleId" ng-change="showSelectValue(vehicleId)">
+      <option selected>Veh001</option>
+      <option>Veh002</option>
+      <option>Veh003</option>
+   </select>
 </label>
 
    
@@ -94,7 +81,7 @@ console.log( "here in scroll") ;
 
 <p class="assertive">{{ errorMessage }} </p>
 
-
+</center>
 
 
   
@@ -108,28 +95,27 @@ console.log( "here in scroll") ;
 
 
 		
-<div id="dvMap" style="width:90%; height:300px" class="row">
+<div id="dvMap" style="width: 300px; height:200px" class="row">
 </div> 
 
 
 <br/>
 {{ ImageMessage}}        
- 
- 
 
- <div id="imageDiv"  >
+Showing image <b>{{img_counter +1 }} </b> of <b> {{ photos.length}} </b> <br/> 
+ <div id="imageDiv"  class="row" >
      
 
      
           
- Showing image <b>{{img_counter +1 }} </b> of <b> {{ photos.length}} </b> <br/>
 
 
-<button id="prevButton" class="button button-small" ng-Click="showPrev()">
+
+<button class="button button-small" ng-Click="showPrev()">
    <<
 </button>
-  <img id="imageHolder" src="{{photos[img_counter].src}}"  class="row"   style="width:90%;height:300px;"  >
-	<button id="nextButton" class="button button-small" ng-Click="showNext()" >
+  <img src="{{photos[img_counter].src}}"  class="row"   style="width:300px;height:200px;"  >
+	<button class="button button-small" ng-Click="showNext()" >
    >>
 </button>
 		 
@@ -140,7 +126,6 @@ console.log( "here in scroll") ;
        
      
       </div>
-	  </center>
 
 </ion-content>
 </ion-view>

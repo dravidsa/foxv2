@@ -47,11 +47,12 @@ foxapp = angular.module('app.controllers', ["ion-datetime-picker"])
 	
 	 //latlongArr = [] ; 
 	 //$scope.photos = [] ; 
-	 
+	 $scope.gotImages = false  ; 
     zoomLevel = 10; 
 	$scope.img_counter = 0 ; 
 	
- 
+    $scope.vehicleArr = $localstorage.getObject("vehicleArr") ; 
+	console.log( " veh arr is "  + $scope.vehicleArr) ;  
  
 	var counter = 1 ; 
 	$scope.mode= "specific" ; 
@@ -122,13 +123,14 @@ foxapp = angular.module('app.controllers', ["ion-datetime-picker"])
 		console.log("vid"  + $scope.vehicleId+"< for date>"+$scope.forDate+"< fromtime>" + $scope.fromTime+"<"+$scope.toTime+"<") ; 
 			$scope.errorMessage = "Vehicle id , date , From time and To time are mandatory " ; 
 		console.log( "error here ") ; 
+			$scope.hide($ionicLoading);  
 				return  ; 
   
 			}
 			else $scope.errorMessage = "Fetcing values for this time range " ; 
 				  console.log("vid"  + $scope.vehicleId+"< for date>"+$scope.forDate+"< fromtime>" + $scope.fromTime.getHours()+"<"+$scope.toTime.getMinutes()+"<") ; 
 
-	$scope.debugMessage = "calling showImages" ; 
+	//$scope.debugMessage = "calling showImages" ; 
 	
 	//$scope.showImages(); 
 	
@@ -153,7 +155,7 @@ foxapp = angular.module('app.controllers', ["ion-datetime-picker"])
 	
 	
 	console.log("scope photos now has " + $scope.photos.length);	
-	$scope.debugMessage = "calling showMap" ; 
+	//$scope.debugMessage = "calling showMap" ; 
 	$scope.showMap() ; 
 	
 	 $scope.hide($ionicLoading);
@@ -203,8 +205,8 @@ var new_image ;
 							{
 									$scope.ImageMessage = "No Image  data available for this duration " ; 
 									$localstorage.setObject("imageArr", "") ;
-									console.log( "hiding image dive ") ; 
-									$scope.showHideDiv( 'imageDiv','hide') ; 
+									console.log( "hiding image dive did not get any data ") ; 
+									$scope.showHideDiv( 'imageDiv','hide') ; $scope.gotImages = false  ; 
 									return ; 
 
 							}
@@ -214,6 +216,8 @@ var new_image ;
 								console.log( "got undefined "); 
 								//return ;
 							}
+							$scope.gotImages = true ; 
+							
 							$scope.showHideDiv( 'imageDiv','show') ; 
                             console.log("got vehicle" + data.length  ) ; 
 							for ( i = 0 ; i < data.length ; i ++ ) {
@@ -227,10 +231,16 @@ var new_image ;
 								
 								//imageArr.push( "src:'http://foxsolutions.in/fox/"+ data[i].event_file_name +"' , desc:'TEST' " ) ;
 							imageArr.push( new_image ) ;
-								console.log(new_image) ; 
+							console.log(new_image) ; 
 							}
 							$localstorage.setObject("imageArr", imageArr) ; 
 							$rootScope.photos = imageArr; 
+							console.log( "focusing on div");
+							
+							var div1 = document.getElementById("prevButton") ; 
+							console.log("got element" + div1 ) ; 
+							div1.focus(); 
+							
 							 
 							//console.log("got photos " + $rootScope.imageArr.length) ;
 								}) ; 
@@ -366,7 +376,7 @@ $scope.getLocations  = function() {
 							if ( data == 0 ) 
 							{
 									$scope.GPSMessage = "No GPS data available for this duration " ; 
-									console.log( 'did not get any data ' + data.length  ); 
+									console.log( 'did not get any data for vehicle ' + data.length  ); 
 									$localstorage.setObject("latlongArr", "") ;
 									$scope.showHideDiv( 'dvMap','hide') ; 									
 									return ; 
@@ -491,6 +501,16 @@ $scope.showSelectValue = function(vehicle)  {
  $scope.setMode = function ( mode ) { 
  $scope.mode = mode ; 
  console.log ( " mode is " + $scope.mode + "vehicle is" + $scope.vehicleId  ) ; 
+ 
+ //remove specific div 
+ /*
+ var timerange = document.getElementById('timerange');
+    timerange.parentNode.removeChild(timerange);
+   // return false;
+*/
+	
+ 
+ //end remove
  var div = document.getElementById('timerange');
 
  if ( $scope.mode == "live" ) { 
@@ -653,13 +673,20 @@ div.style.visibility = 'hidden';
 
                     $localstorage.setObject('loginData', loginData);
                     $localstorage.setObject('userModel', $rootScope.userModel);
-                    
+                  
+					
                     Vehicle.execute( data).then(function (vehicledata) { 
                             console.log("got vehicle" + vehicledata ) ; 
-                  
+                  vehicleArr = [] ; 
 
                     $rootScope.userModel.vehicle = vehicledata; 
-                      console.log(" vehicle id is " + vehicledata[0].vehicle_id ) ;  
+                      console.log(" vehicle id is " + vehicledata ) ;  
+					  for ( i = 0 ; i < vehicledata.length; i ++ ) {
+						  console.log ( "got veh" + vehicledata[i].vehicle_id) ; 
+						  vehicleArr.push(vehicledata[i].vehicle_id ) ; 
+						  
+					  }
+					  $localstorage.setObject('vehicleArr', vehicleArr);
                     }); 
                     //window.location.href="#/app/camera";
 					$scope.hide($ionicLoading);  
