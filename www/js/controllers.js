@@ -39,6 +39,9 @@ foxapp = angular.module('app.controllers', ["ion-datetime-picker"])
 	var div = document.getElementById('imageDiv');console.log("got div "  + div ) ; 
 	 div.style.visibility = 'visible'; 
 	 
+	 var div = document.getElementById('dvMap');console.log("got div "  + div ) ; 
+	 div.style.visibility = 'visible'; 
+	 
 	// $scope.errorMessage = " No error " ; 
 	 //$scope.debugMessage = " All's well " ; 
      //$scope.GPSMessage = "GPS data " ; 
@@ -239,7 +242,7 @@ var new_image ;
 							
 							var div1 = document.getElementById("prevButton") ; 
 							console.log("got element" + div1 ) ; 
-							div1.focus(); 
+							//div1.focus(); 
 							
 							 
 							//console.log("got photos " + $rootScope.imageArr.length) ;
@@ -517,6 +520,14 @@ $scope.showSelectValue = function(vehicle)  {
  
 // hide
 div.style.visibility = 'hidden';
+
+if ($scope.vehicleId == null ) 
+{
+	console.log ( "select vehicle first ") ; 
+	alert("select Vehicle first "); 
+$scope.errorMessage = "Vehicle id is mandatory " ; 
+return ; 
+}
  //latlongArr = [] ; 
  $scope.photos = [] ; 
  //$scope.drawMap(); 
